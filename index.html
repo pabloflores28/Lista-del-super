@@ -114,7 +114,7 @@
         <!-- VISTA HOME -->
         <div id="view-home">
             <div class="quick-input-box">
-                <input type="text" id="quick-text-input" placeholder="Escribí producto o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
+                <input type="text" id="quick-text-input" placeholder="Escribí uno o varios productos y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
                 <button type="button" onclick="handleQuickText()" class="btn btn-primary" style="padding: 10px 16px;">➕</button>
             </div>
 
@@ -320,32 +320,51 @@
             input.value = '';
         }
 
-        // BÚSQUEDA INTELIGENTE Y FLEXIBLE POR PALABRAS PARCIALES
+        // PROCESADOR MÚLTIPLE INTELIGENTE (DIVIDE FRASES MÚLTIPLES POR "Y", ",", ETC.)
         function processSpokenOrTyped(spoken) {
             if (!spoken) return;
             let lowerNorm = spoken.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-            // DETECTAR SI QUIERE TACHAR (Incluye "tacha", "tachar", "ya compre", "compre", etc.)
-            if (/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\b/i.test(lowerNorm)) {
-                let searchWords = lowerNorm.replace(/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\s+/i, '').trim().split(/\s+/);
+            // Ver si la orden global empieza con intención de tachar
+            let isTacharCommand = /^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\b/i.test(lowerNorm);
+
+            if (isTacharCommand) {
+                // Sacar la palabra de comando inicial del texto general
+                let cleanQuery = lowerNorm.replace(/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\s+/i, '').trim();
                 
-                // Buscar el ítem que contenga la mayor cantidad de palabras dichas (coincidencia parcial flexible)
-                let found = list.find(i => {
-                    let itemNameNorm = i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    // Si el nombre del producto incluye la frase o alguna palabra principal importante
-                    return searchWords.some(word => word.length > 2 && itemNameNorm.includes(word)) || itemNameNorm.includes(searchWords.join(' '));
+                // Separar por comas o por la letra " y " para detectar varios ítems juntos (ej: "leche, pan y fideos")
+                let subItems = cleanQuery.split(/,|\s+y\s+/).map(s => s.trim()).filter(s => s.length > 0);
+
+                let successCount = 0;
+                let notFoundList = [];
+
+                subItems.forEach(sub => {
+                    let searchWords = sub.split(/\s+/);
+                    let found = list.find(i => {
+                        let itemNameNorm = i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        return searchWords.some(word => word.length > 2 && itemNameNorm.includes(word)) || itemNameNorm.includes(sub);
+                    });
+
+                    if (found) {
+                        found.bought = true;
+                        successCount++;
+                    } else {
+                        notFoundList.push(sub);
+                    }
                 });
 
-                if (found) {
-                    found.bought = true;
-                    save();
-                    render();
-                    alert(`¡Tachado como comprado: "${found.name}"!`);
+                save();
+                render();
+
+                if (successCount > 0 && notFoundList.length === 0) {
+                    alert(`¡Listo! Se tacharon ${successCount} productos correctamente.`);
+                } else if (successCount > 0 && notFoundList.length > 0) {
+                    alert(`Se tacharon ${successCount}, pero no encontré: "${notFoundList.join(', ')}".`);
                 } else {
-                    alert(`No encontré ningún producto parecido a lo que dijiste en la lista.`);
+                    alert(`No encontré ninguno de los productos mencionados en la lista.`);
                 }
             } else {
-                // PRODUCTO NUEVO: ABRE VENTANA PARA ELEGIR RUBRO
+                // SI ES PARA AGREGAR NUEVO: Tomar el texto completo como producto nuevo
                 let cleanName = spoken.replace(/^(comprar|agregar|anotar)\s+/i, '').trim();
                 if (!cleanName) cleanName = spoken;
 
@@ -674,7 +693,7 @@
             render();
         }
 
-        // MICRÓFONO INTELIGENTE CON BÚSQUEDA FLEXIBLE
+        // MICRÓFONO CON PROCESAMIENTO DE MÚLTIPLES PRODUCTOS
         let recognition = null, listening = false;
         function toggleVoice() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -688,7 +707,7 @@
 
             recognition.onstart = () => { 
                 listening = true; 
-                statusEl.innerText = "🎙️ Escuchando... (ej: 'tacha alimento perro')";
+                statusEl.innerText = "🎙️ Escuchando... (ej: 'tacha leche y pan')";
                 statusEl.style.display = 'block'; 
             };
 
