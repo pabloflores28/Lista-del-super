@@ -4,435 +4,741 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperList - Compras de la Casa</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- FontAwesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: #f1f5f9; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+        header { background-color: #ffffff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 30; padding: 12px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .max { max-width: 800px; margin: 0 auto; width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .logo-box { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .icon-cart { background: #059669; color: white; padding: 10px; border-radius: 12px; font-size: 18px; }
+        .btn { background: #e2e8f0; color: #334155; border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; justify-content: center; }
+        .btn-primary { background: #059669; color: white; }
+        .btn-warning { background: #d97706; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-info { background: #0284c7; color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-purple { background: #9333ea; color: white; }
+        .btn:hover { opacity: 0.9; }
+        main { max-width: 800px; margin: 0 auto; width: 100%; padding: 20px 16px; flex: 1; padding-bottom: 140px; }
+        
+        .action-buttons-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        
+        .quick-input-box { background: #ffffff; padding: 14px 16px; border-radius: 16px; border: 1px solid #cbd5e1; display: flex; gap: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .quick-input-box input { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; color: #1e293b; font-size: 14px; outline: none; }
+        
+        .search-bar { background: #ffffff; padding: 16px; border-radius: 16px; border: 1px solid #cbd5e1; display: flex; gap: 10px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .search-bar input { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; color: #1e293b; font-size: 14px; outline: none; }
+        .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title h2 { font-size: 18px; color: #0f172a; font-weight: 700; }
+        .badge { background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #64748b; font-weight: 600; }
+        
+        .grid-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .cat-card { 
+            border-radius: 20px; 
+            padding: 20px; 
+            cursor: pointer; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 14px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        .cat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); filter: brightness(0.97); }
+        
+        .cat-header { display: flex; justify-content: space-between; align-items: center; }
+        .cat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .cat-pending { background: rgba(255,255,255,0.85); font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 12px; backdrop-filter: blur(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .cat-info h3 { font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+        .cat-info p { font-size: 12px; color: #475569; font-weight: 500; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.3s; }
+        
+        .view-hidden { display: none !important; }
+        
+        .detail-header { background: #ffffff; padding: 14px; border-radius: 14px; border: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: sticky; top: 73px; z-index: 25; box-shadow: 0 4px 12px rgba(0,0,0,0.08); backdrop-filter: blur(5px); }
+        
+        .form-box { background: #ffffff; padding: 16px; border-radius: 16px; border: 1px solid #cbd5e1; margin-bottom: 16px; display: flex; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .form-box input { background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 10px; color: #1e293b; font-size: 14px; outline: none; }
+        
+        /* DISEÑO DE CADA FILA DE PRODUCTO */
+        .item-row { background: #ffffff; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; display: flex; align-items: center; margin-bottom: 10px; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .item-row.bought { opacity: 0.6; background: #f1f5f9; }
+        .item-row.bought .item-name-input { text-decoration: line-through; color: #64748b; }
+        
+        /* 1. COMPRADO (Lado Izquierdo, Grande) */
+        .checkbox-group-bought { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f0fdf4; border: 2px solid #16a34a; padding: 8px 10px; border-radius: 10px; }
+        .checkbox-group-bought label { font-size: 9px; color: #15803d; font-weight: 800; text-transform: uppercase; }
+        .item-bought-check { width: 22px; height: 22px; accent-color: #059669; cursor: pointer; }
+
+        /* CENTRO (Nombre, cantidad y rubro) */
+        .item-center { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+        .item-name-input { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; font-size: 14px; font-weight: 600; padding: 6px 10px; border-radius: 8px; width: 100%; outline: none; }
+        .item-name-input:focus { border-color: #059669; background: #ffffff; }
+
+        .item-details-row { display: flex; gap: 8px; align-items: center; }
+        .item-qty { background: #f8fafc; border: 1px solid #cbd5e1; color: #047857; font-size: 12px; font-weight: 600; padding: 5px 8px; border-radius: 6px; width: 85px; outline: none; }
+        .item-cat-select { background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; font-size: 11px; padding: 5px 8px; border-radius: 6px; outline: none; cursor: pointer; flex: 1; }
+
+        /* LADO DERECHO (Eliminar + Mover) */
+        .item-right-actions { display: flex; align-items: center; gap: 8px; border-left: 1px solid #e2e8f0; padding-left: 10px; }
+        
+        .trash-btn { background: #ffeeec; border: 1px solid #fecaca; color: #dc2626; cursor: pointer; font-size: 16px; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .trash-btn:hover { background: #dc2626; color: white; }
+
+        .checkbox-group-move { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #eff6ff; border: 1px solid #bfdbfe; padding: 6px 8px; border-radius: 8px; }
+        .checkbox-group-move label { font-size: 9px; color: #1d4ed8; font-weight: bold; text-transform: uppercase; }
+        .item-select-multi { width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer; }
+        
+        .bulk-bar { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: #ffffff; border: 1px solid #cbd5e1; padding: 12px 20px; border-radius: 20px; display: flex; gap: 12px; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 45; width: 90%; max-width: 500px; }
+        .bulk-bar select { background: #f8fafc; border: 1px solid #cbd5e1; color: #1e293b; padding: 6px 10px; border-radius: 8px; font-size: 12px; outline: none; flex: 1; }
+
+        .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); border-top: 1px solid #e2e8f0; padding: 12px; z-index: 40; backdrop-filter: blur(5px); box-shadow: 0 -4px 10px rgba(0,0,0,0.03); }
+        .footer-content { max-width: 400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .nav-btn { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; padding: 10px; border-radius: 14px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .mic-fab { width: 56px; height: 56px; background: linear-gradient(135deg, #059669, #0d9488); border: 3px solid #ffffff; border-radius: 50%; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; top: -16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
+        
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 999; backdrop-filter: blur(3px); }
+        .modal-content { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px; width: 100%; max-width: 420px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15); }
+        .duplicate-list { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; max-height: 150px; overflow-y: auto; font-size: 13px; color: #dc2626; }
+
+        .new-cat-box { background: #ffffff; border: 1px solid #cbd5e1; padding: 12px 16px; border-radius: 16px; display: flex; gap: 10px; margin-bottom: 16px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .new-cat-box input { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; color: #1e293b; font-size: 13px; outline: none; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
+<body>
 
-    <!-- HEADER SUPERIOR -->
-    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-md">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="goHome()">
-                <div class="bg-emerald-600 text-white p-2.5 rounded-xl shadow-lg flex items-center justify-center">
-                    <i class="fa-solid fa-cart-shopping text-xl"></i>
-                </div>
+    <header>
+        <div class="max">
+            <div class="logo-box" onclick="goHome()">
+                <div class="icon-cart">🛒</div>
                 <div>
-                    <h1 class="font-bold text-lg tracking-wide text-white leading-tight">SuperList</h1>
-                    <p class="text-xs text-emerald-400 font-medium">Lista de Compras Familiar</p>
+                    <h1 style="font-size: 16px; font-weight: bold; color: #0f172a;">SuperList</h1>
+                    <p style="font-size: 11px; color: #059669; font-weight: 600;">Lista de Compras Familiar</p>
                 </div>
-            </div>
-            
-            <div class="flex items-center space-x-2">
-                <button onclick="openImportModal()" title="Importar lista de texto" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-xl text-sm font-medium transition flex items-center space-x-1.5 shadow-sm">
-                    <i class="fa-solid fa-file-arrow-down text-emerald-400"></i>
-                    <span class="hidden sm:inline">Importar</span>
-                </button>
             </div>
         </div>
     </header>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <main class="max-w-4xl mx-auto px-4 py-5 flex-1 w-full pb-32">
-        
-        <!-- VISTA 1: HOME (RUBROS) -->
-        <div id="view-home" class="space-y-6">
-            <!-- Barra de búsqueda -->
-            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 shadow-lg backdrop-blur-sm">
-                <div class="relative w-full sm:w-72">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
-                    <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" placeholder="Buscar producto..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
-                </div>
-                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
-                    <button onclick="showAllItemsView()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center space-x-2 w-full sm:w-auto justify-center">
-                        <i class="fa-solid fa-list-check text-emerald-400"></i>
-                        <span>Ver Todo el Changuito</span>
-                    </button>
-                </div>
+    <main>
+        <!-- VISTA HOME -->
+        <div id="view-home">
+            <div class="quick-input-box">
+                <input type="text" id="quick-text-input" placeholder="Escribí uno o varios productos o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
+                <button type="button" onclick="handleQuickText()" class="btn btn-primary" style="padding: 10px 16px;">➕</button>
             </div>
 
-            <!-- Título de sección -->
-            <div class="flex items-center justify-between">
-                <h2 class="text-xl font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-folder-open text-emerald-400"></i>
-                    <span>Rubros de la Casa</span>
-                </h2>
-                <span class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700" id="total-pending-badge">0 pendientes</span>
+            <div class="action-buttons-box">
+                <button type="button" onclick="checkDuplicates()" class="btn btn-warning" style="padding: 10px;">
+                    🧹 Duplicados
+                </button>
+                <button type="button" onclick="uncheckAllItems()" class="btn btn-info" style="padding: 10px;">
+                    🔄 Destachar
+                </button>
+                <button type="button" onclick="exportData()" class="btn btn-purple" style="padding: 10px;">
+                    📤 Exportar
+                </button>
+                <button type="button" onclick="document.getElementById('import-file').click()" class="btn btn-success" style="padding: 10px;">
+                    📥 Importar
+                </button>
+                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+                <button type="button" onclick="shareWhatsApp()" class="btn btn-success" style="grid-column: span 2; padding: 12px;">
+                    💬 Compartir por WhatsApp
+                </button>
             </div>
 
-            <!-- Grid de Categorías -->
-            <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Se inyecta dinámicamente con JS -->
+            <div class="search-bar">
+                <input type="text" id="global-search" placeholder="Buscar producto..." onkeypress="if(event.key==='Enter') triggerSearch()">
+                <button type="button" onclick="triggerSearch()" class="btn btn-primary">🔍 Buscar</button>
             </div>
+
+            <!-- Creador de Rubro Nuevo -->
+            <div class="new-cat-box">
+                <span style="font-size: 13px; color: #059669; font-weight: 700;">➕ Nuevo Rubro:</span>
+                <input type="text" id="new-cat-input" placeholder="Ej: Verdulería, Carnicería..." onkeypress="if(event.key==='Enter') createCategory()">
+                <button type="button" onclick="createCategory()" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Crear</button>
+            </div>
+
+            <div class="section-title">
+                <h2>📁 Rubros de la Casa</h2>
+                <span class="badge" id="total-pending-badge">0 pendientes</span>
+            </div>
+
+            <div id="categories-grid" class="grid-categories"></div>
         </div>
 
-        <!-- VISTA 2: DETALLE DE RUBRO / VISTA GENERAL / BÚSQUEDA -->
-        <div id="view-category" class="hidden space-y-5">
-            <div class="flex items-center justify-between bg-slate-800/90 p-3.5 rounded-2xl border border-slate-700/60 shadow-md">
-                <button onclick="goHome()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-xl text-sm font-medium transition flex items-center space-x-2">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Volver a Rubros</span>
-                </button>
-                <div class="text-right">
-                    <h3 id="active-category-title" class="font-bold text-base text-white">Categoría</h3>
-                    <p class="text-xs text-slate-400" id="active-category-counter">0 ítems</p>
+        <!-- VISTA DETALLE -->
+        <div id="view-category" class="view-hidden">
+            <div class="detail-header">
+                <button type="button" onclick="goHome()" class="btn">⬅ Volver</button>
+                <div style="text-align: right;">
+                    <h3 id="active-category-title" style="font-size: 15px; color: #0f172a; font-weight: 700;">Rubro</h3>
+                    <p id="active-category-counter" style="font-size: 11px; color: #64748b; font-weight: 500;">0 ítems</p>
                 </div>
             </div>
 
-            <!-- Formulario de carga rápida manual -->
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg space-y-3">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-plus-circle"></i>
-                    <span>Agregar Producto Nuevo</span>
-                </h4>
-                <div class="flex gap-2">
-                    <input type="text" id="manual-item-input" placeholder="Ej: Leche descremada..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onkeypress="if(event.key === 'Enter') addManualItem()">
-                    <input type="text" id="manual-qty-input" placeholder="Cant. (ej: 2L)" class="w-28 sm:w-36 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" onkeypress="if(event.key === 'Enter') addManualItem()">
-                    <button onclick="addManualItem()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition shadow-md flex items-center justify-center">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                </div>
+            <div class="form-box">
+                <input type="text" id="manual-name" placeholder="Producto nuevo..." style="flex: 1;" onkeypress="if(event.key==='Enter') promptManualItem()">
+                <input type="text" id="manual-qty" placeholder="Cant." style="width: 80px;" onkeypress="if(event.key==='Enter') promptManualItem()">
+                <button type="button" onclick="promptManualItem()" class="btn btn-primary">➕</button>
             </div>
 
-            <!-- Botón para desplegar catálogo frecuente -->
-            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-3.5 flex items-center justify-between">
-                <div class="flex items-center space-x-2.5">
-                    <div class="bg-emerald-500/20 text-emerald-400 p-2 rounded-xl">
-                        <i class="fa-solid fa-book-bookmark"></i>
-                    </div>
-                    <div>
-                        <h5 class="text-sm font-bold text-white">Víveres Frecuentes</h5>
-                        <p class="text-xs text-slate-400">Agregá rápidamente productos comunes</p>
-                    </div>
-                </div>
-                <button onclick="togglePreloadedCatalog()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 border border-slate-600">
-                    <span id="catalog-btn-text">Ver Catálogo</span>
-                    <i class="fa-solid fa-chevron-down" id="catalog-icon"></i>
-                </button>
-            </div>
-
-            <!-- Panel desplegable de Catálogo -->
-            <div id="preloaded-catalog-panel" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl space-y-3">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-700">
-                    <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Hacé clic para agregar:</span>
-                    <button onclick="togglePreloadedCatalog()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i> Cerrar</button>
-                </div>
-                <div id="catalog-items-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto custom-scrollbar pr-1"></div>
-            </div>
-
-            <!-- Lista de Ítems -->
-            <div class="space-y-2.5" id="items-list-container"></div>
+            <div id="items-list-container"></div>
         </div>
     </main>
 
-    <!-- BARRA INFERIOR FLOTANTE (VOZ Y ACCESOS) -->
-    <div class="fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800 backdrop-blur-md p-3 z-40 shadow-2xl">
-        <div class="max-w-md mx-auto flex items-center justify-between gap-3">
-            <button onclick="goHome()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 px-4 rounded-2xl text-xs font-semibold flex flex-col items-center justify-center space-y-1 transition border border-slate-700/60 shadow-sm">
-                <i class="fa-solid fa-house text-emerald-400 text-base"></i>
-                <span>Rubros</span>
-            </button>
-            
-            <!-- Botón Central de Voz -->
-            <div class="relative -top-5">
-                <button id="mic-btn" onclick="toggleVoiceRecognition()" title="Dictar por voz" class="w-16 h-16 bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl transition transform hover:scale-105 active:scale-95 border-4 border-slate-900">
-                    <i class="fa-solid fa-microphone" id="mic-icon"></i>
-                </button>
+    <!-- MODAL DE CONFIRMACIÓN / ELECCIÓN DE RUBRO -->
+    <div id="confirm-modal" class="modal view-hidden">
+        <div class="modal-content">
+            <h3 style="color: #0f172a; font-size: 16px;">📁 ¿En qué rubro lo ponemos?</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-size: 11px; color: #64748b; font-weight: bold;">PRODUCTO CAPTURADO:</label>
+                <input type="text" id="confirm-name-input" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none;">
             </div>
-
-            <button onclick="showAllItemsView()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 px-4 rounded-2xl text-xs font-semibold flex flex-col items-center justify-center space-y-1 transition border border-slate-700/60 shadow-sm">
-                <i class="fa-solid fa-clipboard-list text-emerald-400 text-base"></i>
-                <span>Todo el Changuito</span>
-            </button>
-        </div>
-        <div id="voice-status" class="text-center text-xs text-emerald-400 font-medium h-4 mt-1 hidden">
-            Escuchando... Decí qué te falta comprar (ej: "2 litros de leche")
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-size: 11px; color: #64748b; font-weight: bold;">SELECCIONAR RUBRO:</label>
+                <select id="confirm-cat-select" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 10px; font-size: 14px; outline: none; width: 100%;"></select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                <button type="button" onclick="closeConfirmModal()" class="btn">Cancelar</button>
+                <button type="button" onclick="saveConfirmedItem()" class="btn btn-primary">Guardar en este rubro</button>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL DE IMPORTACIÓN -->
-    <div id="import-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <h3 class="font-bold text-lg text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-file-arrow-down text-emerald-400"></i>
-                    <span>Importar Lista de Texto</span>
-                </h3>
-                <button onclick="closeImportModal()" class="text-slate-400 hover:text-white p-1.5"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-300">Pegá tu lista de WhatsApp o notas aquí abajo. Se separará y clasificará automáticamente.</p>
-            <textarea id="import-textarea" rows="6" placeholder="Ej:&#10;- 2 leches&#10;- Pan lactal&#10;- Lavandina" class="w-full bg-slate-900 border border-slate-700 rounded-2xl p-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition custom-scrollbar"></textarea>
-            <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeImportModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition">Cancelar</button>
-                <button onclick="processImportText()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition shadow-md">Procesar e Importar</button>
+    <!-- MODAL DE DUPLICADOS -->
+    <div id="duplicate-modal" class="modal view-hidden">
+        <div class="modal-content">
+            <h3 style="color: #0f172a; font-size: 16px;">🧹 Limpieza de Duplicados</h3>
+            <p id="duplicate-msg" style="font-size: 13px; color: #475569; line-height: 1.4;"></p>
+            <div id="duplicate-list-container" class="duplicate-list"></div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                <button type="button" onclick="closeDuplicateModal()" class="btn">Cancelar</button>
+                <button type="button" onclick="confirmDeleteDuplicates()" class="btn btn-danger">Sí, borrar duplicados</button>
             </div>
         </div>
+    </div>
+
+    <!-- BARRA FLOTANTE DE SELECCIÓN MÚLTIPLE -->
+    <div id="bulk-action-bar" class="bulk-bar view-hidden">
+        <span id="selected-count" style="font-size: 12px; color: #2563eb; font-weight: bold;">0 seleccionados</span>
+        <select id="bulk-target-cat"></select>
+        <button type="button" onclick="applyBulkMove()" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">Mover</button>
+    </div>
+
+    <!-- BARRA INFERIOR -->
+    <div class="footer-nav">
+        <div class="footer-content">
+            <button type="button" onclick="goHome()" class="nav-btn">🏠 <span>Rubros</span></button>
+            <button type="button" id="mic-btn" onclick="toggleVoice()" class="mic-fab" title="Tocá y hablá">🎤</button>
+            <button type="button" onclick="showAllItems()" class="nav-btn">📋 <span>Changuito</span></button>
+        </div>
+        <div id="voice-status" style="text-align: center; font-size: 12px; color: #059669; font-weight: bold; margin-top: 6px; display: none;">🎙️ Escuchando...</div>
     </div>
 
     <script>
-        // DEFINICIÓN DE RUBROS
-        const CATEGORIES = {
-            'limpieza': { id: 'limpieza', title: 'Limpieza y Hogar', icon: 'fa-spray-can-sparkles', color: 'from-blue-600 to-indigo-600', bgCard: 'bg-blue-950/40 border-blue-800/50' },
-            'secos': { id: 'secos', title: 'Alimentos Secos', icon: 'fa-wheat-awn', color: 'from-amber-600 to-orange-600', bgCard: 'bg-amber-950/40 border-amber-800/50' },
-            'frio': { id: 'frio', title: 'Frío / Heladera', icon: 'fa-snowflake', color: 'from-cyan-600 to-teal-600', bgCard: 'bg-cyan-950/40 border-cyan-800/50' },
-            'otros': { id: 'otros', title: 'Otros / Varios', icon: 'fa-basket-shopping', color: 'from-emerald-600 to-green-600', bgCard: 'bg-emerald-950/40 border-emerald-800/50' }
+        let CATEGORIES = {
+            'limpieza': { title: 'Limpieza y Hogar', icon: '🧹', color: '#2563eb', bg: '#e0f2fe' },
+            'secos': { title: 'Alimentos Secos', icon: '🌾', color: '#d97706', bg: '#fef3c7' },
+            'frio': { title: 'Frío / Heladera', icon: '❄️', color: '#0891b2', bg: '#ccfbf1' },
+            'otros': { title: 'Otros / Varios', icon: '🛒', color: '#059669', bg: '#d1fae5' }
         };
 
-        const PRELOADED_CATALOG = [
-            { name: 'Leche', cat: 'frio', qty: '1 litro' },
-            { name: 'Pan lactal', cat: 'secos', qty: '1 paquete' },
-            { name: 'Huevos', cat: 'frio', qty: '1 docena' },
-            { name: 'Lavandina', cat: 'limpieza', qty: '1 bidón' },
-            { name: 'Detergente', cat: 'limpieza', qty: '1 unidad' },
-            { name: 'Papel higiénico', cat: 'limpieza', qty: '4 rollos' },
-            { name: 'Fideos', cat: 'secos', qty: '2 paquetes' },
-            { name: 'Arroz', cat: 'secos', qty: '1 kg' },
-            { name: 'Aceite de girasol', cat: 'secos', qty: '1.5 litros' },
-            { name: 'Yerba mate', cat: 'secos', qty: '500g' },
-            { name: 'Azúcar', cat: 'secos', qty: '1 kg' },
-            { name: 'Queso cremoso', cat: 'frio', qty: '300g' },
-            { name: 'Milanesas de pollo', cat: 'frio', qty: '1 kg' },
-            { name: 'Cebolla', cat: 'otros', qty: '1 kg' }
-        ];
-
-        let shoppingList = [];
-        let currentView = 'home';
-        let activeCategory = null;
+        let list = [];
+        let view = 'home';
+        let activeCat = null;
         let searchQuery = '';
+        let selectedIds = new Set();
+        let duplicateIdsToRemove = [];
 
-        function initApp() {
-            loadItemsFromStorage();
-            renderApp();
-            populateCatalog();
-        }
+        function init() {
+            const savedCats = localStorage.getItem('superlist_cats_master');
+            if (savedCats) {
+                try {
+                    const parsed = JSON.parse(savedCats);
+                    if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+                        CATEGORIES = parsed;
+                    }
+                } catch(e) {}
+            }
 
-        function loadItemsFromStorage() {
-            const saved = localStorage.getItem('superlist_local');
+            const saved = localStorage.getItem('superlist_db_master');
             if (saved) {
-                try { shoppingList = JSON.parse(saved); } catch(e) { shoppingList = []; }
-            } else {
-                shoppingList = [
+                try {
+                    const parsedList = JSON.parse(saved);
+                    if (Array.isArray(parsedList)) {
+                        list = parsedList;
+                    }
+                } catch(e) {
+                    list = [];
+                }
+            }
+
+            if (!list || list.length === 0) {
+                list = [
                     { id: '1', name: 'Leche entera', qty: '2 litros', cat: 'frio', bought: false },
-                    { id: '2', name: 'Lavandina', qty: '1 bidón', cat: 'limpieza', bought: false },
-                    { id: '3', name: 'Fideos', qty: '1 paquete', cat: 'secos', bought: false }
+                    { id: '2', name: 'Cebolla', qty: '1 kg', cat: 'otros', bought: false },
+                    { id: '3', name: 'Lavandina', qty: '1 bidón', cat: 'limpieza', bought: false }
                 ];
-                saveLocal();
+            }
+            save();
+            render();
+        }
+
+        function save() {
+            localStorage.setItem('superlist_db_master', JSON.stringify(list));
+            localStorage.setItem('superlist_cats_master', JSON.stringify(CATEGORIES));
+        }
+
+        function exportData() {
+            const data = { categories: CATEGORIES, list: list };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "superlist_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (parsed.list && parsed.categories) {
+                            list = parsed.list;
+                            CATEGORIES = parsed.categories;
+                            save();
+                            render();
+                            alert(`¡Éxito! Se importaron ${list.length} productos.`);
+                        } else {
+                            alert('El archivo no tiene el formato correcto.');
+                        }
+                    } catch (error) {
+                        alert('Error al leer el archivo.');
+                    }
+                };
             }
         }
 
-        function saveLocal() {
-            localStorage.setItem('superlist_local', JSON.stringify(shoppingList));
+        function handleQuickText() {
+            const input = document.getElementById('quick-text-input');
+            processSpokenOrTyped(input.value.trim());
+            input.value = '';
         }
 
-        function categorizeItem(text) {
-            const t = text.toLowerCase();
-            if (/lavandina|detergente|jabon|esponja|limpiador|papel higienico|rollo|desodorante|shampoo|bolsa|trapo|escoba/i.test(t)) return 'limpieza';
-            if (/leche|queso|manteca|yogur|crema|jamon|salchicha|milanesa|carne|pollo|hamburguesa|tapa|empanada|helado|congelado/i.test(t)) return 'frio';
-            if (/fideo|arroz|aceite|yerba|azucar|harina|pan|galletita|cafe|te|lenteja|lata|atun|salsa|caldo|sal/i.test(t)) return 'secos';
-            return 'otros';
-        }
+        function processSpokenOrTyped(spoken) {
+            if (!spoken) return;
+            let lowerNorm = spoken.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-        function renderApp() {
-            const totalPending = shoppingList.filter(i => !i.bought).length;
-            document.getElementById('total-pending-badge').innerText = totalPending + ' pendientes';
+            let isTacharCommand = /^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\b/i.test(lowerNorm);
 
-            if (currentView === 'home') {
-                document.getElementById('view-home').classList.remove('hidden');
-                document.getElementById('view-category').classList.add('hidden');
-                renderCategoriesGrid();
+            if (isTacharCommand) {
+                let cleanQuery = lowerNorm.replace(/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\s+/i, '').trim();
+                let subItems = cleanQuery.split(/,|\s+y\s+/).map(s => s.trim()).filter(s => s.length > 0);
+
+                let successCount = 0;
+                let notFoundList = [];
+
+                subItems.forEach(sub => {
+                    let searchWords = sub.split(/\s+/);
+                    let found = list.find(i => {
+                        let itemNameNorm = i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        return searchWords.some(word => word.length > 2 && itemNameNorm.includes(word)) || itemNameNorm.includes(sub);
+                    });
+
+                    if (found) {
+                        found.bought = true;
+                        successCount++;
+                    } else {
+                        notFoundList.push(sub);
+                    }
+                });
+
+                save();
+                render();
+
+                if (successCount > 0 && notFoundList.length === 0) {
+                    alert(`¡Listo! Se tacharon ${successCount} productos correctamente.`);
+                } else if (successCount > 0 && notFoundList.length > 0) {
+                    alert(`Se tacharon ${successCount}, pero no encontré: "${notFoundList.join(', ')}".`);
+                } else {
+                    alert(`No encontré ninguno de los productos mencionados en la lista.`);
+                }
             } else {
-                document.getElementById('view-home').classList.add('hidden');
-                document.getElementById('view-category').classList.remove('hidden');
-                renderCategoryDetail();
+                let cleanName = spoken.replace(/^(comprar|agregar|anotar)\s+/i, '').trim();
+                if (!cleanName) cleanName = spoken;
+
+                let defaultCat = (view === 'category' && activeCat) ? activeCat : 'otros';
+                openConfirmModal(cleanName.charAt(0).toUpperCase() + cleanName.slice(1), '1 un.', defaultCat);
             }
         }
 
-        function renderCategoriesGrid() {
+        function checkDuplicates() {
+            const seenNames = new Set();
+            duplicateIdsToRemove = [];
+            const duplicateNamesDisplay = [];
+
+            list.forEach(item => {
+                const cleanName = item.name.trim().toLowerCase();
+                if (seenNames.has(cleanName)) {
+                    duplicateIdsToRemove.push(item.id);
+                    duplicateNamesDisplay.push(`• ${item.name} (${item.qty || '1 un.'})`);
+                } else {
+                    seenNames.add(cleanName);
+                }
+            });
+
+            const modal = document.getElementById('duplicate-modal');
+            const msgEl = document.getElementById('duplicate-msg');
+            const container = document.getElementById('duplicate-list-container');
+
+            if (duplicateIdsToRemove.length > 0) {
+                msgEl.innerText = `Se encontraron ${duplicateIdsToRemove.length} repetidos. ¿Desea borrarlos?`;
+                container.innerHTML = duplicateNamesDisplay.join('<br>');
+                modal.classList.remove('view-hidden');
+            } else {
+                alert('¡Excelente! No hay duplicados.');
+            }
+        }
+
+        function closeDuplicateModal() {
+            document.getElementById('duplicate-modal').classList.add('view-hidden');
+            duplicateIdsToRemove = [];
+        }
+
+        function confirmDeleteDuplicates() {
+            if (duplicateIdsToRemove.length === 0) return;
+            list = list.filter(item => !duplicateIdsToRemove.includes(item.id));
+            save();
+            closeDuplicateModal();
+            render();
+            alert('¡Duplicados eliminados!');
+        }
+
+        function uncheckAllItems() {
+            const boughtCount = list.filter(i => i.bought).length;
+            if (boughtCount === 0) {
+                alert('No hay productos tachados.');
+                return;
+            }
+
+            if (confirm(`¿Querés destachar los ${boughtCount} productos comprados?`)) {
+                list.forEach(item => { item.bought = false; });
+                save();
+                render();
+                alert('¡Lista renovada a pendientes!');
+            }
+        }
+
+        function shareWhatsApp() {
+            const pendingItems = list.filter(i => !i.bought);
+            if (pendingItems.length === 0) {
+                alert('No hay pendientes para compartir.');
+                return;
+            }
+
+            let text = "🛒 *Lista de Compras - SuperList*:\n\n";
+            for (const [key, cat] of Object.entries(CATEGORIES)) {
+                const catItems = pendingItems.filter(i => i.cat === key);
+                if (catItems.length > 0) {
+                    text += `${cat.icon} *${cat.title}*:\n`;
+                    catItems.forEach(item => { text += `  • ${item.name} (${item.qty || '1 un.'})\n`; });
+                    text += `\n`;
+                }
+            }
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function createCategory() {
+            const input = document.getElementById('new-cat-input');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const key = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+            if (CATEGORIES[key]) { alert('Ese rubro ya existe.'); return; }
+
+            const icons = ['🥕', '🥩', '🍞', '🍷', '📦', '🏠'];
+            const colors = ['#16a34a', '#dc2626', '#9333ea', '#ca8a04', '#0284c7'];
+            const pastelBgs = ['#f3e8ff', '#fce7f3', '#e0e7ff', '#ccfbf1', '#fef3c7'];
+
+            CATEGORIES[key] = {
+                title: name,
+                icon: icons[Math.floor(Math.random() * icons.length)],
+                color: colors[Math.floor(Math.random() * colors.length)],
+                bg: pastelBgs[Math.floor(Math.random() * pastelBgs.length)]
+            };
+            save();
+            input.value = '';
+            render();
+        }
+
+        function render() {
+            const pendingTotal = list.filter(i => !i.bought).length;
+            document.getElementById('total-pending-badge').innerText = pendingTotal + ' pendientes';
+
+            if (view === 'home') {
+                document.getElementById('view-home').classList.remove('view-hidden');
+                document.getElementById('view-category').classList.add('view-hidden');
+                renderGrid();
+            } else {
+                document.getElementById('view-home').classList.add('view-hidden');
+                document.getElementById('view-category').classList.remove('view-hidden');
+                renderDetail();
+            }
+            updateBulkBar();
+        }
+
+        function renderGrid() {
             const grid = document.getElementById('categories-grid');
             grid.innerHTML = '';
-
             for (const [key, cat] of Object.entries(CATEGORIES)) {
-                const itemsInCat = shoppingList.filter(i => i.cat === key);
-                const pendingInCat = itemsInCat.filter(i => !i.bought).length;
-                const totalInCat = itemsInCat.length;
+                const items = list.filter(i => i.cat === key);
+                const pending = items.filter(i => !i.bought).length;
+                const total = items.length;
+                const pct = total > 0 ? ((total - pending) / total) * 100 : 0;
 
                 const card = document.createElement('div');
-                card.className = `${cat.bgCard} border rounded-3xl p-5 shadow-lg hover:border-slate-500 transition cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden group`;
-                card.onclick = () => openCategoryView(key);
-
+                card.className = 'cat-card';
+                card.style.backgroundColor = cat.bg || '#f8fafc';
+                card.onclick = () => openCat(key);
                 card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div class="bg-gradient-to-tr ${cat.color} text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-md text-xl group-hover:scale-110 transition duration-300">
-                            <i class="fa-solid ${cat.icon}"></i>
-                        </div>
-                        <span class="bg-slate-900/80 text-emerald-400 border border-slate-700/80 text-xs font-bold px-3 py-1 rounded-full">
-                            ${pendingInCat} pendientes
-                        </span>
+                    <div class="cat-header">
+                        <div class="cat-icon" style="background: ${cat.color};">${cat.icon}</div>
+                        <span class="cat-pending" style="color: ${cat.color};">${pending} pendientes</span>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-lg text-white group-hover:text-emerald-300 transition">${cat.title}</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">${totalInCat} ítems en total</p>
+                    <div class="cat-info">
+                        <h3>${cat.title}</h3>
+                        <p>${total} ítems en total</p>
                     </div>
-                    <div class="w-full bg-slate-900/60 rounded-full h-1.5 overflow-hidden">
-                        <div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${totalInCat > 0 ? ((totalInCat - pendingInCat) / totalInCat) * 100 : 0}%"></div>
-                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width: ${pct}%; background: ${cat.color};"></div></div>
                 `;
                 grid.appendChild(card);
             }
         }
 
-        function renderCategoryDetail() {
+        function renderDetail() {
             const titleEl = document.getElementById('active-category-title');
             const counterEl = document.getElementById('active-category-counter');
             const container = document.getElementById('items-list-container');
             container.innerHTML = '';
 
             let filtered = [];
-            if (currentView === 'category') {
-                titleEl.innerText = CATEGORIES[activeCategory]?.title || 'Rubro';
-                filtered = shoppingList.filter(i => i.cat === activeCategory);
-            } else if (currentView === 'all') {
+            if (view === 'category') {
+                titleEl.innerText = CATEGORIES[activeCat]?.title || 'Rubro';
+                filtered = list.filter(i => i.cat === activeCat);
+            } else if (view === 'all') {
                 titleEl.innerText = 'Todo el Changuito';
-                filtered = shoppingList;
-            } else if (currentView === 'search') {
-                titleEl.innerText = `Resultados para: "${searchQuery}"`;
-                const q = searchQuery.toLowerCase();
-                filtered = shoppingList.filter(i => i.name.toLowerCase().includes(q));
+                filtered = list;
+            } else if (view === 'search') {
+                titleEl.innerText = `Búsqueda: "${searchQuery}"`;
+                filtered = list.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
             }
 
             counterEl.innerText = `${filtered.filter(i => !i.bought).length} pendientes de ${filtered.length} total`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 bg-slate-800/40 border border-slate-700/50 rounded-3xl space-y-3">
-                        <div class="text-slate-500 text-4xl"><i class="fa-solid fa-basket-shopping"></i></div>
-                        <p class="text-slate-400 text-sm font-medium">No hay productos en esta vista.</p>
-                    </div>
-                `;
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:#64748b; font-size:14px;">No hay productos.</div>`;
                 return;
             }
 
-            filtered.sort((a, b) => (a.bought === b.bought) ? 0 : a.bought ? 1 : -1);
+            filtered.sort((a, b) => {
+                if (a.bought !== b.bought) return a.bought ? 1 : -1;
+                return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+            });
 
             filtered.forEach(item => {
-                const div = document.createElement('div');
-                div.className = `bg-slate-800 border ${item.bought ? 'border-slate-800 opacity-60 bg-slate-900/40' : 'border-slate-700'} rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-md transition`;
+                const row = document.createElement('div');
+                row.className = `item-row ${item.bought ? 'bought' : ''}`;
                 
-                div.innerHTML = `
-                    <div class="flex items-center space-x-3.5 flex-1 min-w-0">
-                        <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleItem('${item.id}')" class="w-5 h-5 accent-emerald-500 rounded cursor-pointer">
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-white truncate ${item.bought ? 'line-through text-slate-400' : ''}">${item.name}</p>
-                            <div class="flex items-center space-x-2 mt-0.5">
-                                <input type="text" value="${item.qty || ''}" placeholder="Cantidad..." onchange="updateQty('${item.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-xs text-emerald-400 font-medium w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                                ${currentView !== 'category' ? `<span class="text-[10px] bg-slate-700/80 text-slate-300 px-2 py-0.5 rounded-md uppercase font-bold">${CATEGORIES[item.cat]?.title || item.cat}</span>` : ''}
-                            </div>
+                let optionsHtml = '';
+                for (const [k, c] of Object.entries(CATEGORIES)) {
+                    optionsHtml += `<option value="${k}" ${item.cat === k ? 'selected' : ''}>${c.title}</option>`;
+                }
+
+                row.innerHTML = `
+                    <div class="checkbox-group-bought" title="Marcar como ya comprado en el súper">
+                        <label>Comprado</label>
+                        <input type="checkbox" class="item-bought-check" ${item.bought ? 'checked' : ''} onchange="toggleItem('${item.id}')">
+                    </div>
+
+                    <div class="item-center">
+                        <input type="text" class="item-name-input" value="${item.name}" onchange="updateName('${item.id}', this.value)">
+                        <div class="item-details-row">
+                            <input type="text" class="item-qty" value="${item.qty || ''}" placeholder="Cant..." onchange="updateQty('${item.id}', this.value)">
+                            <select class="item-cat-select" onchange="changeItemCategory('${item.id}', this.value)">${optionsHtml}</select>
                         </div>
                     </div>
-                    <button onclick="deleteItem('${item.id}')" title="Eliminar" class="text-slate-500 hover:text-red-400 p-2 rounded-xl transition">
-                        <i class="fa-solid fa-trash-can text-sm"></i>
-                    </button>
+
+                    <div class="item-right-actions">
+                        <button type="button" class="trash-btn" onclick="deleteItem('${item.id}')" title="Eliminar producto">🗑</button>
+                        <div class="checkbox-group-move" title="Seleccionar para mover de rubro">
+                            <label>Mover</label>
+                            <input type="checkbox" class="item-select-multi" ${selectedIds.has(item.id) ? 'checked' : ''} onchange="toggleSelect('${item.id}')">
+                        </div>
+                    </div>
                 `;
-                container.appendChild(div);
+                container.appendChild(row);
             });
         }
 
-        function goHome() { currentView = 'home'; activeCategory = null; renderApp(); }
-        function openCategoryView(catKey) { currentView = 'category'; activeCategory = catKey; renderApp(); }
-        function showAllItemsView() { currentView = 'all'; activeCategory = null; renderApp(); }
-        function handleGlobalSearch(val) {
-            searchQuery = val.trim();
-            if (searchQuery.length > 0) { currentView = 'search'; renderApp(); } else { goHome(); }
+        function toggleSelect(id) {
+            if (selectedIds.has(id)) selectedIds.delete(id);
+            else selectedIds.add(id);
+            updateBulkBar();
         }
 
-        function addManualItem() {
-            const nameInput = document.getElementById('manual-item-input');
-            const qtyInput = document.getElementById('manual-qty-input');
-            const name = nameInput.value.trim();
-            const qty = qtyInput.value.trim() || '1 unidad';
-            if (!name) return;
+        function updateBulkBar() {
+            const bar = document.getElementById('bulk-action-bar');
+            const countEl = document.getElementById('selected-count');
+            const selectEl = document.getElementById('bulk-target-cat');
 
-            const cat = (currentView === 'category' && activeCategory) ? activeCategory : categorizeItem(name);
-            shoppingList.push({ id: 'item_' + Date.now(), name, qty, cat, bought: false });
-            saveLocal();
-            nameInput.value = ''; qtyInput.value = '';
-            renderApp();
+            if (selectedIds.size > 0) {
+                bar.classList.remove('view-hidden');
+                countEl.innerText = `${selectedIds.size} seleccionados`;
+                selectEl.innerHTML = '';
+                for (const [k, c] of Object.entries(CATEGORIES)) {
+                    selectEl.innerHTML += `<option value="${k}">${c.title}</option>`;
+                }
+            } else {
+                bar.classList.add('view-hidden');
+            }
+        }
+
+        function applyBulkMove() {
+            const targetCat = document.getElementById('bulk-target-cat').value;
+            list.forEach(item => { if (selectedIds.has(item.id)) item.cat = targetCat; });
+            selectedIds.clear();
+            save();
+            render();
+        }
+
+        function goHome() { view = 'home'; activeCat = null; selectedIds.clear(); document.getElementById('global-search').value = ''; render(); }
+        function openCat(key) { view = 'category'; activeCat = key; selectedIds.clear(); render(); }
+        function showAllItems() { view = 'all'; activeCat = null; selectedIds.clear(); render(); }
+        
+        function triggerSearch() {
+            const val = document.getElementById('global-search').value.trim();
+            if (val.length > 0) { searchQuery = val; view = 'search'; render(); }
+            else { goHome(); }
+        }
+
+        function updateName(id, val) {
+            const item = list.find(i => i.id === id);
+            if (item && val.trim()) { item.name = val.trim(); save(); render(); }
+        }
+
+        function changeItemCategory(id, newCat) {
+            const item = list.find(i => i.id === id);
+            if (item) { item.cat = newCat; save(); render(); }
+        }
+
+        function promptManualItem() {
+            const nameInput = document.getElementById('manual-name');
+            const qtyInput = document.getElementById('manual-qty');
+            const name = nameInput.value.trim();
+            const qty = qtyInput.value.trim() || '1 un.';
+            if (!name) return;
+            openConfirmModal(name, qty, (view === 'category' && activeCat) ? activeCat : 'otros');
+            nameInput.value = '';
+            qtyInput.value = '';
+        }
+
+        function openConfirmModal(productName, productQty, suggestedCat) {
+            document.getElementById('confirm-name-input').value = productName;
+            const select = document.getElementById('confirm-cat-select');
+            select.innerHTML = '';
+            for (const [k, c] of Object.entries(CATEGORIES)) {
+                select.innerHTML += `<option value="${k}" ${k === suggestedCat ? 'selected' : ''}>${c.icon} ${c.title}</option>`;
+            }
+            document.getElementById('confirm-modal').classList.remove('view-hidden');
+        }
+
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('view-hidden'); }
+
+        function saveConfirmedItem() {
+            const finalName = document.getElementById('confirm-name-input').value.trim();
+            const finalCat = document.getElementById('confirm-cat-select').value;
+            if (!finalName) return;
+
+            list.push({ 
+                id: 'item_' + Date.now(), 
+                name: finalName.charAt(0).toUpperCase() + finalName.slice(1), 
+                qty: '1 un.', 
+                cat: finalCat, 
+                bought: false 
+            });
+            save();
+            closeConfirmModal();
+            render();
         }
 
         function toggleItem(id) {
-            const item = shoppingList.find(i => i.id === id);
-            if (item) { item.bought = !item.bought; saveLocal(); renderApp(); }
+            const item = list.find(i => i.id === id);
+            if (item) {
+                item.bought = !item.bought;
+                if (!item.bought) item.qty = '1 un.';
+                save();
+                render();
+            }
         }
-        function updateQty(id, newQty) {
-            const item = shoppingList.find(i => i.id === id);
-            if (item) { item.qty = newQty; saveLocal(); }
+
+        function updateQty(id, val) {
+            const item = list.find(i => i.id === id);
+            if (item) { item.qty = val.trim() || '1 un.'; save(); }
         }
+
         function deleteItem(id) {
-            shoppingList = shoppingList.filter(i => i.id !== id);
-            saveLocal(); renderApp();
+            list = list.filter(i => i.id !== id);
+            selectedIds.delete(id);
+            save();
+            render();
         }
 
-        function togglePreloadedCatalog() {
-            document.getElementById('preloaded-catalog-panel').classList.toggle('hidden');
-        }
+        // MICRÓFONO
+        let recognition = null, listening = false;
+        function toggleVoice() {
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!Speech) { alert('Tu navegador no soporta voz.'); return; }
+            if (listening) { if (recognition) recognition.stop(); return; }
 
-        function populateCatalog() {
-            const container = document.getElementById('catalog-items-container');
-            container.innerHTML = '';
-            PRELOADED_CATALOG.forEach(prod => {
-                const btn = document.createElement('button');
-                btn.className = 'bg-slate-900 hover:bg-emerald-950/60 border border-slate-700 hover:border-emerald-500/60 text-slate-200 text-xs py-2 px-3 rounded-xl transition flex items-center justify-between group';
-                btn.onclick = () => {
-                    shoppingList.push({ id: 'item_' + Date.now() + Math.random(), name: prod.name, qty: prod.qty, cat: prod.cat, bought: false });
-                    saveLocal(); renderApp();
-                };
-                btn.innerHTML = `<span class="truncate font-medium">${prod.name}</span><i class="fa-solid fa-plus text-emerald-400 group-hover:scale-125 transition"></i>`;
-                container.appendChild(btn);
-            });
-        }
-
-        function openImportModal() { document.getElementById('import-modal').classList.remove('hidden'); }
-        function closeImportModal() { document.getElementById('import-modal').classList.add('hidden'); }
-        function processImportText() {
-            const text = document.getElementById('import-textarea').value;
-            if (!text.trim()) return;
-            text.split('\n').forEach(line => {
-                let clean = line.replace(/^[-*•\d\.\)]+\s*/, '').trim();
-                if (clean.length > 1) {
-                    shoppingList.push({ id: 'item_' + Date.now() + Math.random(), name: clean, qty: '1 unidad', cat: categorizeItem(clean), bought: false });
-                }
-            });
-            saveLocal(); renderApp(); closeImportModal();
-        }
-
-        // VOZ
-        let recognition = null, isListening = false;
-        function toggleVoiceRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) { alert('Tu navegador no soporta voz. Probá en Google Chrome.'); return; }
-            if (isListening) { if (recognition) recognition.stop(); return; }
-
-            recognition = new SpeechRecognition();
+            recognition = new Speech();
             recognition.lang = 'es-AR';
-            recognition.onstart = () => { isListening = true; document.getElementById('voice-status').classList.remove('hidden'); };
-            recognition.onresult = (e) => {
-                let spoken = e.results[0][0].transcript.replace(/^(comprar|agregar|anotar)\s+/i, '');
-                shoppingList.push({ id: 'item_' + Date.now(), name: spoken.charAt(0).toUpperCase() + spoken.slice(1), qty: '1 unidad', cat: categorizeItem(spoken), bought: false });
-                saveLocal(); renderApp();
+            
+            const statusEl = document.getElementById('voice-status');
+
+            recognition.onstart = () => { 
+                listening = true; 
+                statusEl.innerText = "🎙️ Escuchando... (ej: 'tacha leche y pan')";
+                statusEl.style.display = 'block'; 
             };
-            recognition.onerror = recognition.onend = () => { isListening = false; document.getElementById('voice-status').classList.add('hidden'); };
+
+            recognition.onresult = (e) => {
+                let spoken = e.results[0][0].transcript.trim();
+                statusEl.innerText = `✅ Entendí: "${spoken}"`;
+                setTimeout(() => {
+                    processSpokenOrTyped(spoken);
+                }, 300);
+            };
+
+            recognition.onerror = () => {
+                statusEl.innerText = "⚠️ No se entendió bien.";
+                setTimeout(() => { statusEl.style.display = 'none'; }, 2000);
+            };
+
+            recognition.onend = () => { 
+                listening = false; 
+                setTimeout(() => { statusEl.style.display = 'none'; }, 1500); 
+            };
+
             recognition.start();
         }
 
-        window.onload = initApp;
+        window.onload = init;
     </script>
 </body>
 </html>
