@@ -23,6 +23,9 @@
         
         .action-buttons-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         
+        .quick-input-box { background: #ffffff; padding: 14px 16px; border-radius: 16px; border: 1px solid #cbd5e1; display: flex; gap: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .quick-input-box input { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; color: #1e293b; font-size: 14px; outline: none; }
+        
         .search-bar { background: #ffffff; padding: 16px; border-radius: 16px; border: 1px solid #cbd5e1; display: flex; gap: 10px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .search-bar input { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 14px; border-radius: 10px; color: #1e293b; font-size: 14px; outline: none; }
         .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -110,6 +113,11 @@
     <main>
         <!-- VISTA HOME -->
         <div id="view-home">
+            <div class="quick-input-box">
+                <input type="text" id="quick-text-input" placeholder="Escribí producto o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
+                <button type="button" onclick="handleQuickText()" class="btn btn-primary" style="padding: 10px 16px;">➕</button>
+            </div>
+
             <div class="action-buttons-box">
                 <button type="button" onclick="checkDuplicates()" class="btn btn-warning" style="padding: 10px;">
                     🧹 Duplicados
@@ -273,10 +281,7 @@
         }
 
         function exportData() {
-            const data = {
-                categories: CATEGORIES,
-                list: list
-            };
+            const data = { categories: CATEGORIES, list: list };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -298,7 +303,7 @@
                             CATEGORIES = parsed.categories;
                             save();
                             render();
-                            alert(`¡Éxito! Se importaron ${list.length} productos correctamente.`);
+                            alert(`¡Éxito! Se importaron ${list.length} productos.`);
                         } else {
                             alert('El archivo no tiene el formato correcto.');
                         }
@@ -306,6 +311,39 @@
                         alert('Error al leer el archivo.');
                     }
                 };
+            }
+        }
+
+        function handleQuickText() {
+            const input = document.getElementById('quick-text-input');
+            processSpokenOrTyped(input.value.trim());
+            input.value = '';
+        }
+
+        // PROCESADOR INTELIGENTE (COMPARTIDO ENTRE VOZ Y TEXTO RÁPIDO)
+        function processSpokenOrTyped(spoken) {
+            if (!spoken) return;
+            let lowerNorm = spoken.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            // DETECTAR SI QUIERE TACHAR (Incluye "tacha", "tachar", "ya compre", "compre", etc.)
+            if (/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\b/i.test(lowerNorm)) {
+                let productName = lowerNorm.replace(/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\s+/i, '').trim();
+                let found = list.find(i => i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(productName));
+                if (found) {
+                    found.bought = true;
+                    save();
+                    render();
+                    alert(`¡Tachado como comprado: "${found.name}"!`);
+                } else {
+                    alert(`No encontré ningún producto parecido a "${productName}" en la lista.`);
+                }
+            } else {
+                // PRODUCTO NUEVO: ABRE VENTANA PARA ELEGIR RUBRO
+                let cleanName = spoken.replace(/^(comprar|agregar|anotar)\s+/i, '').trim();
+                if (!cleanName) cleanName = spoken;
+
+                let defaultCat = (view === 'category' && activeCat) ? activeCat : 'otros';
+                openConfirmModal(cleanName.charAt(0).toUpperCase() + cleanName.slice(1), '1 un.', defaultCat);
             }
         }
 
@@ -329,11 +367,11 @@
             const container = document.getElementById('duplicate-list-container');
 
             if (duplicateIdsToRemove.length > 0) {
-                msgEl.innerText = `Todos estos ítems están duplicados. ¿Desea borrarlos? (Se encontraron ${duplicateIdsToRemove.length} repetidos):`;
+                msgEl.innerText = `Se encontraron ${duplicateIdsToRemove.length} repetidos. ¿Desea borrarlos?`;
                 container.innerHTML = duplicateNamesDisplay.join('<br>');
                 modal.classList.remove('view-hidden');
             } else {
-                alert('¡Excelente! No se encontraron productos duplicados en la lista.');
+                alert('¡Excelente! No hay duplicados.');
             }
         }
 
@@ -348,48 +386,42 @@
             save();
             closeDuplicateModal();
             render();
-            alert('¡Duplicados eliminados correctamente!');
+            alert('¡Duplicados eliminados!');
         }
 
         function uncheckAllItems() {
             const boughtCount = list.filter(i => i.bought).length;
             if (boughtCount === 0) {
-                alert('No hay productos tachados en este momento.');
+                alert('No hay productos tachados.');
                 return;
             }
 
-            if (confirm(`¿Querés destachar los ${boughtCount} productos comprados y pasarlos nuevamente a pendientes?`)) {
-                list.forEach(item => {
-                    item.bought = false;
-                });
+            if (confirm(`¿Querés destachar los ${boughtCount} productos comprados?`)) {
+                list.forEach(item => { item.bought = false; });
                 save();
                 render();
-                alert('¡Lista renovada! Todos los productos pasaron a pendientes.');
+                alert('¡Lista renovada a pendientes!');
             }
         }
 
         function shareWhatsApp() {
             const pendingItems = list.filter(i => !i.bought);
             if (pendingItems.length === 0) {
-                alert('No hay productos pendientes en la lista para compartir.');
+                alert('No hay pendientes para compartir.');
                 return;
             }
 
             let text = "🛒 *Lista de Compras - SuperList*:\n\n";
-
             for (const [key, cat] of Object.entries(CATEGORIES)) {
                 const catItems = pendingItems.filter(i => i.cat === key);
                 if (catItems.length > 0) {
                     text += `${cat.icon} *${cat.title}*:\n`;
-                    catItems.forEach(item => {
-                        text += `  • ${item.name} (${item.qty || '1 un.'})\n`;
-                    });
+                    catItems.forEach(item => { text += `  • ${item.name} (${item.qty || '1 un.'})\n`; });
                     text += `\n`;
                 }
             }
 
-            const encoded = encodeURIComponent(text);
-            window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function createCategory() {
@@ -398,19 +430,18 @@
             if (!name) return;
 
             const key = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
-            if (CATEGORIES[key]) {
-                alert('Ese rubro ya existe.');
-                return;
-            }
+            if (CATEGORIES[key]) { alert('Ese rubro ya existe.'); return; }
 
             const icons = ['🥕', '🥩', '🍞', '🍷', '📦', '🏠'];
-            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
             const colors = ['#16a34a', '#dc2626', '#9333ea', '#ca8a04', '#0284c7'];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            const pastelBgs = ['#f3e8ff', '#fce7f3', '#e0e7ff', '#fae8ff', '#ccfbf1', '#fef3c7'];
-            const randomBg = pastelBgs[Math.floor(Math.random() * pastelBgs.length)];
+            const pastelBgs = ['#f3e8ff', '#fce7f3', '#e0e7ff', '#ccfbf1', '#fef3c7'];
 
-            CATEGORIES[key] = { title: name, icon: randomIcon, color: randomColor, bg: randomBg };
+            CATEGORIES[key] = {
+                title: name,
+                icon: icons[Math.floor(Math.random() * icons.length)],
+                color: colors[Math.floor(Math.random() * colors.length)],
+                bg: pastelBgs[Math.floor(Math.random() * pastelBgs.length)]
+            };
             save();
             input.value = '';
             render();
@@ -444,7 +475,6 @@
                 const card = document.createElement('div');
                 card.className = 'cat-card';
                 card.style.backgroundColor = cat.bg || '#f8fafc';
-                
                 card.onclick = () => openCat(key);
                 card.innerHTML = `
                     <div class="cat-header">
@@ -482,7 +512,7 @@
             counterEl.innerText = `${filtered.filter(i => !i.bought).length} pendientes de ${filtered.length} total`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px; color:#64748b; font-size:14px;">No hay productos en esta vista.</div>`;
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:#64748b; font-size:14px;">No hay productos.</div>`;
                 return;
             }
 
@@ -500,15 +530,13 @@
                     optionsHtml += `<option value="${k}" ${item.cat === k ? 'selected' : ''}>${c.title}</option>`;
                 }
 
-                const isChecked = selectedIds.has(item.id) ? 'checked' : '';
-
                 row.innerHTML = `
                     <div class="item-left">
-                        <div class="checkbox-group" title="Marcar varios para mover de rubro">
+                        <div class="checkbox-group" title="Mover">
                             <label>Mover</label>
-                            <input type="checkbox" class="item-select-multi" ${isChecked} onchange="toggleSelect('${item.id}')">
+                            <input type="checkbox" class="item-select-multi" ${selectedIds.has(item.id) ? 'checked' : ''} onchange="toggleSelect('${item.id}')">
                         </div>
-                        <div class="checkbox-group" title="Marcar como ya comprado en el súper">
+                        <div class="checkbox-group" title="Comprar">
                             <label>Comprar</label>
                             <input type="checkbox" class="item-bought-check" ${item.bought ? 'checked' : ''} onchange="toggleItem('${item.id}')">
                         </div>
@@ -516,9 +544,7 @@
                             <input type="text" class="item-name-input" value="${item.name}" onchange="updateName('${item.id}', this.value)">
                             <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
                                 <input type="text" class="item-qty" value="${item.qty || ''}" placeholder="Cant..." onchange="updateQty('${item.id}', this.value)">
-                                <select class="item-cat-select" onchange="changeItemCategory('${item.id}', this.value)">
-                                    ${optionsHtml}
-                                </select>
+                                <select class="item-cat-select" onchange="changeItemCategory('${item.id}', this.value)">${optionsHtml}</select>
                             </div>
                         </div>
                     </div>
@@ -529,11 +555,8 @@
         }
 
         function toggleSelect(id) {
-            if (selectedIds.has(id)) {
-                selectedIds.delete(id);
-            } else {
-                selectedIds.add(id);
-            }
+            if (selectedIds.has(id)) selectedIds.delete(id);
+            else selectedIds.add(id);
             updateBulkBar();
         }
 
@@ -545,7 +568,6 @@
             if (selectedIds.size > 0) {
                 bar.classList.remove('view-hidden');
                 countEl.innerText = `${selectedIds.size} seleccionados`;
-                
                 selectEl.innerHTML = '';
                 for (const [k, c] of Object.entries(CATEGORIES)) {
                     selectEl.innerHTML += `<option value="${k}">${c.title}</option>`;
@@ -557,48 +579,25 @@
 
         function applyBulkMove() {
             const targetCat = document.getElementById('bulk-target-cat').value;
-            if (selectedIds.size === 0) return;
-
-            list.forEach(item => {
-                if (selectedIds.has(item.id)) {
-                    item.cat = targetCat;
-                }
-            });
-
+            list.forEach(item => { if (selectedIds.has(item.id)) item.cat = targetCat; });
             selectedIds.clear();
             save();
             render();
         }
 
-        function goHome() { 
-            view = 'home'; 
-            activeCat = null; 
-            selectedIds.clear(); 
-            document.getElementById('global-search').value = '';
-            render(); 
-        }
-        
+        function goHome() { view = 'home'; activeCat = null; selectedIds.clear(); document.getElementById('global-search').value = ''; render(); }
         function openCat(key) { view = 'category'; activeCat = key; selectedIds.clear(); render(); }
         function showAllItems() { view = 'all'; activeCat = null; selectedIds.clear(); render(); }
         
         function triggerSearch() {
             const val = document.getElementById('global-search').value.trim();
-            if (val.length > 0) {
-                searchQuery = val;
-                view = 'search';
-                render();
-            } else {
-                goHome();
-            }
+            if (val.length > 0) { searchQuery = val; view = 'search'; render(); }
+            else { goHome(); }
         }
 
         function updateName(id, val) {
             const item = list.find(i => i.id === id);
-            if (item && val.trim()) {
-                item.name = val.trim();
-                save();
-                render();
-            }
+            if (item && val.trim()) { item.name = val.trim(); save(); render(); }
         }
 
         function changeItemCategory(id, newCat) {
@@ -612,29 +611,22 @@
             const name = nameInput.value.trim();
             const qty = qtyInput.value.trim() || '1 un.';
             if (!name) return;
-
-            let defaultCat = (view === 'category' && activeCat) ? activeCat : 'otros';
-            openConfirmModal(name, qty, defaultCat);
-            document.getElementById('manual-name').value = '';
-            document.getElementById('manual-qty').value = '';
+            openConfirmModal(name, qty, (view === 'category' && activeCat) ? activeCat : 'otros');
+            nameInput.value = '';
+            qtyInput.value = '';
         }
 
         function openConfirmModal(productName, productQty, suggestedCat) {
             document.getElementById('confirm-name-input').value = productName;
-            
             const select = document.getElementById('confirm-cat-select');
             select.innerHTML = '';
             for (const [k, c] of Object.entries(CATEGORIES)) {
-                const isSelected = (k === suggestedCat) ? 'selected' : '';
-                select.innerHTML += `<option value="${k}" ${isSelected}>${c.icon} ${c.title}</option>`;
+                select.innerHTML += `<option value="${k}" ${k === suggestedCat ? 'selected' : ''}>${c.icon} ${c.title}</option>`;
             }
-
             document.getElementById('confirm-modal').classList.remove('view-hidden');
         }
 
-        function closeConfirmModal() {
-            document.getElementById('confirm-modal').classList.add('view-hidden');
-        }
+        function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('view-hidden'); }
 
         function saveConfirmedItem() {
             const finalName = document.getElementById('confirm-name-input').value.trim();
@@ -648,7 +640,6 @@
                 cat: finalCat, 
                 bought: false 
             });
-
             save();
             closeConfirmModal();
             render();
@@ -658,9 +649,7 @@
             const item = list.find(i => i.id === id);
             if (item) {
                 item.bought = !item.bought;
-                if (!item.bought) {
-                    item.qty = '1 un.';
-                }
+                if (!item.bought) item.qty = '1 un.';
                 save();
                 render();
             }
@@ -668,19 +657,17 @@
 
         function updateQty(id, val) {
             const item = list.find(i => i.id === id);
-            if (item) { 
-                item.qty = val.trim() || '1 un.'; 
-                save(); 
-            }
+            if (item) { item.qty = val.trim() || '1 un.'; save(); }
         }
 
         function deleteItem(id) {
             list = list.filter(i => i.id !== id);
             selectedIds.delete(id);
-            save(); render();
+            save();
+            render();
         }
 
-        // VOZ INTELIGENTE CON DISTINCIÓN CLARA ENTRE TACHAR Y AGREGAR
+        // MICRÓFONO FUNCIONANDO EN HTTPS (GITHUB PAGES)
         let recognition = null, listening = false;
         function toggleVoice() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -694,37 +681,15 @@
 
             recognition.onstart = () => { 
                 listening = true; 
-                statusEl.innerText = "🎙️ Escuchando... (ej: 'café en granos' o 'ya compré leche')";
+                statusEl.innerText = "🎙️ Escuchando... (ej: 'tacha alimento perro' o 'leche')";
                 statusEl.style.display = 'block'; 
             };
 
             recognition.onresult = (e) => {
                 let spoken = e.results[0][0].transcript.trim();
-                let lowerNorm = spoken.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
                 statusEl.innerText = `✅ Entendí: "${spoken}"`;
-
                 setTimeout(() => {
-                    // 1. DETECTAR SI QUIERE TACHAR
-                    if (/^(ya compre|compre|tachar|ya tengo|comprado)\b/i.test(lowerNorm)) {
-                        let productName = lowerNorm.replace(/^(ya compre|compre|tachar|ya tengo|comprado)\s+/i, '').trim();
-                        let found = list.find(i => i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(productName));
-                        if (found) {
-                            found.bought = true;
-                            save();
-                            render();
-                            alert(`¡Listo! Tachado como comprado: "${found.name}"`);
-                        } else {
-                            alert(`No encontré ningún producto parecido a "${productName}" en la lista para tachar.`);
-                        }
-                    } else {
-                        // 2. SI ES PRODUCTO NUEVO: ABRE VENTANA PARA ELEGIR RUBRO
-                        let cleanName = spoken.replace(/^(comprar|agregar|anotar)\s+/i, '').trim();
-                        if (!cleanName) cleanName = spoken;
-
-                        let defaultCat = (view === 'category' && activeCat) ? activeCat : 'otros';
-                        openConfirmModal(cleanName.charAt(0).toUpperCase() + cleanName.slice(1), '1 un.', defaultCat);
-                    }
+                    processSpokenOrTyped(spoken);
                 }, 300);
             };
 
