@@ -67,11 +67,11 @@
         .item-row.bought .item-name-input { text-decoration: line-through; color: #64748b; }
         
         /* 1. COMPRADO (Lado Izquierdo, Grande) */
-        .checkbox-group-bought { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f0fdf4; border: 2px solid #16a34a; padding: 8px 10px; border-radius: 10px; }
+        .checkbox-group-bought { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #f0fdf4; border: 2px solid #16a34a; padding: 8px 10px; border-radius: 10px; flex-shrink: 0; }
         .checkbox-group-bought label { font-size: 9px; color: #15803d; font-weight: 800; text-transform: uppercase; }
         .item-bought-check { width: 22px; height: 22px; accent-color: #059669; cursor: pointer; }
 
-        /* CENTRO (Nombre, cantidad y rubro) */
+        /* CENTRO (Nombre, cantidad y selector de rubro al lado) */
         .item-center { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
         .item-name-input { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; font-size: 14px; font-weight: 600; padding: 6px 10px; border-radius: 8px; width: 100%; outline: none; }
         .item-name-input:focus { border-color: #059669; background: #ffffff; }
@@ -81,7 +81,7 @@
         .item-cat-select { background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; font-size: 11px; padding: 5px 8px; border-radius: 6px; outline: none; cursor: pointer; flex: 1; }
 
         /* LADO DERECHO (Eliminar + Mover) */
-        .item-right-actions { display: flex; align-items: center; gap: 8px; border-left: 1px solid #e2e8f0; padding-left: 10px; }
+        .item-right-actions { display: flex; align-items: center; gap: 8px; border-left: 1px solid #e2e8f0; padding-left: 10px; flex-shrink: 0; }
         
         .trash-btn { background: #ffeeec; border: 1px solid #fecaca; color: #dc2626; cursor: pointer; font-size: 16px; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
         .trash-btn:hover { background: #dc2626; color: white; }
@@ -124,7 +124,7 @@
         <!-- VISTA HOME -->
         <div id="view-home">
             <div class="quick-input-box">
-                <input type="text" id="quick-text-input" placeholder="Escribí uno o varios productos o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
+                <input type="text" id="quick-text-input" placeholder="Escribí producto o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
                 <button type="button" onclick="handleQuickText()" class="btn btn-primary" style="padding: 10px 16px;">➕</button>
             </div>
 
@@ -362,11 +362,11 @@
                 render();
 
                 if (successCount > 0 && notFoundList.length === 0) {
-                    alert(`¡Listo! Se tacharon ${successCount} productos correctamente.`);
+                    alert(`¡Listo! Se tacharon ${successCount} productos.`);
                 } else if (successCount > 0 && notFoundList.length > 0) {
                     alert(`Se tacharon ${successCount}, pero no encontré: "${notFoundList.join(', ')}".`);
                 } else {
-                    alert(`No encontré ninguno de los productos mencionados en la lista.`);
+                    alert(`No encontré ninguno de los productos mencionados.`);
                 }
             } else {
                 let cleanName = spoken.replace(/^(comprar|agregar|anotar)\s+/i, '').trim();
@@ -560,6 +560,7 @@
                     optionsHtml += `<option value="${k}" ${item.cat === k ? 'selected' : ''}>${c.title}</option>`;
                 }
 
+                // ESTRUCTURA CORREGIDA: Izquierda COMPRADO -> Centro (Nombre, Cantidad y Selector de Rubro) -> Derecha (Eliminar + Mover)
                 row.innerHTML = `
                     <div class="checkbox-group-bought" title="Marcar como ya comprado en el súper">
                         <label>Comprado</label>
