@@ -268,38 +268,58 @@
         let selectedIds = new Set();
         let duplicateIdsToRemove = [];
         let isSyncingFromCloud = false;
-        let firstCloudLoad = true;
 
         function init() {
+            // 1. Recuperar de inmediato del navegador por seguridad para que nunca empiece vacío
+            const localSaved = localStorage.getItem('superlist_db_master');
+            if (localSaved) {
+                try {
+                    const parsed = JSON.parse(localSaved);
+                    if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
+                } catch(e) {}
+            }
+
+            const localCats = localStorage.getItem('superlist_cats_master');
+            if (localCats) {
+                try {
+                    const parsed = JSON.parse(localCats);
+                    if (parsed && typeof parsed === 'object') CATEGORIES = parsed;
+                } catch(e) {}
+            }
+
+            render();
+
+            // 2. Conectar a Firebase en tiempo real
             const docRef = doc(db, "supermercado", "lista_casa");
             
             onSnapshot(docRef, (docSnap) => {
-                isSyncingFromCloud = true;
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    // Solo actualizamos si la nube tiene datos reales y no viene vacía por error
                     if (data.list && data.list.length > 0) {
+                        isSyncingFromCloud = true;
                         list = data.list;
+                        localStorage.setItem('superlist_db_master', JSON.stringify(list));
+                        if (data.categories && Object.keys(data.categories).length > 0) {
+                            CATEGORIES = data.categories;
+                            localStorage.setItem('superlist_cats_master', JSON.stringify(CATEGORIES));
+                        }
+                        render();
+                        isSyncingFromCloud = false;
                     }
-                    if (data.categories && Object.keys(data.categories).length > 0) {
-                        CATEGORIES = data.categories;
-                    }
-                } else if (firstCloudLoad) {
-                    // Si la nube está vacía por primera vez, subimos lo que tenga el navegador
-                    list = [
-                        { id: '1', name: 'Leche entera', qty: '2 litros', cat: 'frio', bought: false },
-                        { id: '2', name: 'Cebolla', qty: '1 kg', cat: 'otros', bought: false },
-                        { id: '3', name: 'Lavandina', qty: '1 bidón', cat: 'limpieza', bought: false }
-                    ];
+                } else if (list.length > 0) {
+                    // Si la nube está vacía pero nosotros tenemos datos, subimos los nuestros
                     saveToCloud();
                 }
-                firstCloudLoad = false;
-                isSyncingFromCloud = false;
-                render();
             });
         }
 
         async function saveToCloud() {
             if (isSyncingFromCloud) return;
+            // Guardar copia local de respaldo siempre
+            localStorage.setItem('superlist_db_master', JSON.stringify(list));
+            localStorage.setItem('superlist_cats_master', JSON.stringify(CATEGORIES));
+
             try {
                 const docRef = doc(db, "supermercado", "lista_casa");
                 await setDoc(docRef, {
@@ -308,7 +328,7 @@
                     updatedAt: new Date().toISOString()
                 });
             } catch (e) {
-                console.error("Error al sincronizar: ", e);
+                console.error("Error al sincronizar con la nube: ", e);
             }
         }
 
