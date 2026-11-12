@@ -114,7 +114,7 @@
                 <div class="icon-cart">🛒</div>
                 <div>
                     <h1 style="font-size: 16px; font-weight: bold; color: #0f172a;">SuperList</h1>
-                    <p style="font-size: 11px; color: #059669; font-weight: 600;">Lista Sincronizada en la Nube ☁️</p>
+                    <p style="font-size: 11px; color: #059669; font-weight: 600;">Sincronizado en la Nube ☁️</p>
                 </div>
             </div>
         </div>
@@ -236,10 +236,10 @@
         <div id="voice-status" style="text-align: center; font-size: 12px; color: #059669; font-weight: bold; margin-top: 6px; display: none;">🎙️ Escuchando...</div>
     </div>
 
-    <!-- IMPORTAR FIREBASE SDK (Modular v10) -->
+    <!-- SCRIPT FIREBASE Y APLICACIÓN -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCZi0M-UjA2Y5TQI98cLV-NKZ7RgkxanoY",
@@ -268,32 +268,37 @@
         let selectedIds = new Set();
         let duplicateIdsToRemove = [];
         let isSyncingFromCloud = false;
+        let firstCloudLoad = true;
 
-        async function init() {
-            // Escuchar cambios en tiempo real desde Firestore
+        function init() {
             const docRef = doc(db, "supermercado", "lista_casa");
             
             onSnapshot(docRef, (docSnap) => {
+                isSyncingFromCloud = true;
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    isSyncingFromCloud = true;
-                    if (data.list) list = data.list;
-                    if (data.categories) CATEGORIES = data.categories;
-                    render();
-                    isSyncingFromCloud = false;
-                } else {
-                    // Datos iniciales si está vacío
+                    if (data.list && data.list.length > 0) {
+                        list = data.list;
+                    }
+                    if (data.categories && Object.keys(data.categories).length > 0) {
+                        CATEGORIES = data.categories;
+                    }
+                } else if (firstCloudLoad) {
+                    // Si la nube está vacía por primera vez, subimos lo que tenga el navegador
                     list = [
                         { id: '1', name: 'Leche entera', qty: '2 litros', cat: 'frio', bought: false },
                         { id: '2', name: 'Cebolla', qty: '1 kg', cat: 'otros', bought: false },
                         { id: '3', name: 'Lavandina', qty: '1 bidón', cat: 'limpieza', bought: false }
                     ];
-                    save();
+                    saveToCloud();
                 }
+                firstCloudLoad = false;
+                isSyncingFromCloud = false;
+                render();
             });
         }
 
-        async function save() {
+        async function saveToCloud() {
             if (isSyncingFromCloud) return;
             try {
                 const docRef = doc(db, "supermercado", "lista_casa");
@@ -303,7 +308,7 @@
                     updatedAt: new Date().toISOString()
                 });
             } catch (e) {
-                console.error("Error al sincronizar con la nube: ", e);
+                console.error("Error al sincronizar: ", e);
             }
         }
 
@@ -328,9 +333,9 @@
                         if (parsed.list && parsed.categories) {
                             list = parsed.list;
                             CATEGORIES = parsed.categories;
-                            save();
+                            saveToCloud();
                             render();
-                            alert(`¡Éxito! Se importaron ${list.length} productos y se sincronizaron en la nube.`);
+                            alert(`¡Éxito! Se importaron ${list.length} productos y se subieron a la nube.`);
                         } else {
                             alert('El archivo no tiene el formato correcto.');
                         }
@@ -375,7 +380,7 @@
                     }
                 });
 
-                save();
+                saveToCloud();
                 render();
 
                 if (successCount > 0 && notFoundList.length === 0) {
@@ -430,7 +435,7 @@
         window.confirmDeleteDuplicates = function() {
             if (duplicateIdsToRemove.length === 0) return;
             list = list.filter(item => !duplicateIdsToRemove.includes(item.id));
-            save();
+            saveToCloud();
             closeDuplicateModal();
             render();
             alert('¡Duplicados eliminados!');
@@ -445,7 +450,7 @@
 
             if (confirm(`¿Querés destachar los ${boughtCount} productos comprados?`)) {
                 list.forEach(item => { item.bought = false; });
-                save();
+                saveToCloud();
                 render();
                 alert('¡Lista renovada a pendientes!');
             }
@@ -489,7 +494,7 @@
                 color: colors[Math.floor(Math.random() * colors.length)],
                 bg: pastelBgs[Math.floor(Math.random() * pastelBgs.length)]
             };
-            save();
+            saveToCloud();
             input.value = '';
             render();
         }
@@ -630,7 +635,7 @@
             const targetCat = document.getElementById('bulk-target-cat').value;
             list.forEach(item => { if (selectedIds.has(item.id)) item.cat = targetCat; });
             selectedIds.clear();
-            save();
+            saveToCloud();
             render();
         }
 
@@ -646,12 +651,12 @@
 
         window.updateName = function(id, val) {
             const item = list.find(i => i.id === id);
-            if (item && val.trim()) { item.name = val.trim(); save(); render(); }
+            if (item && val.trim()) { item.name = val.trim(); saveToCloud(); render(); }
         }
 
         window.changeItemCategory = function(id, newCat) {
             const item = list.find(i => i.id === id);
-            if (item) { item.cat = newCat; save(); render(); }
+            if (item) { item.cat = newCat; saveToCloud(); render(); }
         }
 
         window.promptManualItem = function() {
@@ -689,7 +694,7 @@
                 cat: finalCat, 
                 bought: false 
             });
-            save();
+            saveToCloud();
             closeConfirmModal();
             render();
         }
@@ -699,20 +704,20 @@
             if (item) {
                 item.bought = !item.bought;
                 if (!item.bought) item.qty = '1 un.';
-                save();
+                saveToCloud();
                 render();
             }
         }
 
         window.updateQty = function(id, val) {
             const item = list.find(i => i.id === id);
-            if (item) { item.qty = val.trim() || '1 un.'; save(); }
+            if (item) { item.qty = val.trim() || '1 un.'; saveToCloud(); }
         }
 
         window.deleteItem = function(id) {
             list = list.filter(i => i.id !== id);
             selectedIds.delete(id);
-            save();
+            saveToCloud();
             render();
         }
 
