@@ -320,22 +320,29 @@
             input.value = '';
         }
 
-        // PROCESADOR INTELIGENTE (COMPARTIDO ENTRE VOZ Y TEXTO RÁPIDO)
+        // BÚSQUEDA INTELIGENTE Y FLEXIBLE POR PALABRAS PARCIALES
         function processSpokenOrTyped(spoken) {
             if (!spoken) return;
-            let lowerNorm = spoken.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            let lowerNorm = spoken.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
             // DETECTAR SI QUIERE TACHAR (Incluye "tacha", "tachar", "ya compre", "compre", etc.)
             if (/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\b/i.test(lowerNorm)) {
-                let productName = lowerNorm.replace(/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\s+/i, '').trim();
-                let found = list.find(i => i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(productName));
+                let searchWords = lowerNorm.replace(/^(tacha|tachar|ya compre|compre|ya tengo|comprado|borrar)\s+/i, '').trim().split(/\s+/);
+                
+                // Buscar el ítem que contenga la mayor cantidad de palabras dichas (coincidencia parcial flexible)
+                let found = list.find(i => {
+                    let itemNameNorm = i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    // Si el nombre del producto incluye la frase o alguna palabra principal importante
+                    return searchWords.some(word => word.length > 2 && itemNameNorm.includes(word)) || itemNameNorm.includes(searchWords.join(' '));
+                });
+
                 if (found) {
                     found.bought = true;
                     save();
                     render();
                     alert(`¡Tachado como comprado: "${found.name}"!`);
                 } else {
-                    alert(`No encontré ningún producto parecido a "${productName}" en la lista.`);
+                    alert(`No encontré ningún producto parecido a lo que dijiste en la lista.`);
                 }
             } else {
                 // PRODUCTO NUEVO: ABRE VENTANA PARA ELEGIR RUBRO
@@ -667,7 +674,7 @@
             render();
         }
 
-        // MICRÓFONO FUNCIONANDO EN HTTPS (GITHUB PAGES)
+        // MICRÓFONO INTELIGENTE CON BÚSQUEDA FLEXIBLE
         let recognition = null, listening = false;
         function toggleVoice() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -681,7 +688,7 @@
 
             recognition.onstart = () => { 
                 listening = true; 
-                statusEl.innerText = "🎙️ Escuchando... (ej: 'tacha alimento perro' o 'leche')";
+                statusEl.innerText = "🎙️ Escuchando... (ej: 'tacha alimento perro')";
                 statusEl.style.display = 'block'; 
             };
 
