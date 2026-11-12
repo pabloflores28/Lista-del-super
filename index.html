@@ -71,7 +71,7 @@
         .checkbox-group-bought label { font-size: 9px; color: #15803d; font-weight: 800; text-transform: uppercase; }
         .item-bought-check { width: 22px; height: 22px; accent-color: #059669; cursor: pointer; }
 
-        /* CENTRO (Nombre, cantidad y selector de rubro al lado) */
+        /* CENTRO (Nombre, cantidad y selector de rubro) */
         .item-center { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
         .item-name-input { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; font-size: 14px; font-weight: 600; padding: 6px 10px; border-radius: 8px; width: 100%; outline: none; }
         .item-name-input:focus { border-color: #059669; background: #ffffff; }
@@ -114,7 +114,7 @@
                 <div class="icon-cart">🛒</div>
                 <div>
                     <h1 style="font-size: 16px; font-weight: bold; color: #0f172a;">SuperList</h1>
-                    <p style="font-size: 11px; color: #059669; font-weight: 600;">Lista de Compras Familiar</p>
+                    <p style="font-size: 11px; color: #059669; font-weight: 600;">Lista Sincronizada en la Nube ☁️</p>
                 </div>
             </div>
         </div>
@@ -124,7 +124,7 @@
         <!-- VISTA HOME -->
         <div id="view-home">
             <div class="quick-input-box">
-                <input type="text" id="quick-text-input" placeholder="Escribí producto o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
+                <input type="text" id="quick-text-input" placeholder="Escribí uno o varios productos o 'tacha...' y Enter ⌨️" onkeypress="if(event.key==='Enter') handleQuickText()">
                 <button type="button" onclick="handleQuickText()" class="btn btn-primary" style="padding: 10px 16px;">➕</button>
             </div>
 
@@ -236,7 +236,24 @@
         <div id="voice-status" style="text-align: center; font-size: 12px; color: #059669; font-weight: bold; margin-top: 6px; display: none;">🎙️ Escuchando...</div>
     </div>
 
-    <script>
+    <!-- IMPORTAR FIREBASE SDK (Modular v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCZi0M-UjA2Y5TQI98cLV-NKZ7RgkxanoY",
+            authDomain: "lista-del-super-68adf.firebaseapp.com",
+            projectId: "lista-del-super-68adf",
+            storageBucket: "lista-del-super-68adf.firebasestorage.app",
+            messagingSenderId: "766435067644",
+            appId: "1:766435067644:web:3e3533b66e8c7cf12f7979",
+            measurementId: "G-BSCNXDGQ3L"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         let CATEGORIES = {
             'limpieza': { title: 'Limpieza y Hogar', icon: '🧹', color: '#2563eb', bg: '#e0f2fe' },
             'secos': { title: 'Alimentos Secos', icon: '🌾', color: '#d97706', bg: '#fef3c7' },
@@ -250,47 +267,47 @@
         let searchQuery = '';
         let selectedIds = new Set();
         let duplicateIdsToRemove = [];
+        let isSyncingFromCloud = false;
 
-        function init() {
-            const savedCats = localStorage.getItem('superlist_cats_master');
-            if (savedCats) {
-                try {
-                    const parsed = JSON.parse(savedCats);
-                    if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-                        CATEGORIES = parsed;
-                    }
-                } catch(e) {}
-            }
-
-            const saved = localStorage.getItem('superlist_db_master');
-            if (saved) {
-                try {
-                    const parsedList = JSON.parse(saved);
-                    if (Array.isArray(parsedList)) {
-                        list = parsedList;
-                    }
-                } catch(e) {
-                    list = [];
+        async function init() {
+            // Escuchar cambios en tiempo real desde Firestore
+            const docRef = doc(db, "supermercado", "lista_casa");
+            
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    isSyncingFromCloud = true;
+                    if (data.list) list = data.list;
+                    if (data.categories) CATEGORIES = data.categories;
+                    render();
+                    isSyncingFromCloud = false;
+                } else {
+                    // Datos iniciales si está vacío
+                    list = [
+                        { id: '1', name: 'Leche entera', qty: '2 litros', cat: 'frio', bought: false },
+                        { id: '2', name: 'Cebolla', qty: '1 kg', cat: 'otros', bought: false },
+                        { id: '3', name: 'Lavandina', qty: '1 bidón', cat: 'limpieza', bought: false }
+                    ];
+                    save();
                 }
-            }
-
-            if (!list || list.length === 0) {
-                list = [
-                    { id: '1', name: 'Leche entera', qty: '2 litros', cat: 'frio', bought: false },
-                    { id: '2', name: 'Cebolla', qty: '1 kg', cat: 'otros', bought: false },
-                    { id: '3', name: 'Lavandina', qty: '1 bidón', cat: 'limpieza', bought: false }
-                ];
-            }
-            save();
-            render();
+            });
         }
 
-        function save() {
-            localStorage.setItem('superlist_db_master', JSON.stringify(list));
-            localStorage.setItem('superlist_cats_master', JSON.stringify(CATEGORIES));
+        async function save() {
+            if (isSyncingFromCloud) return;
+            try {
+                const docRef = doc(db, "supermercado", "lista_casa");
+                await setDoc(docRef, {
+                    list: list,
+                    categories: CATEGORIES,
+                    updatedAt: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error("Error al sincronizar con la nube: ", e);
+            }
         }
 
-        function exportData() {
+        window.exportData = function() {
             const data = { categories: CATEGORIES, list: list };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
             const downloadAnchor = document.createElement('a');
@@ -301,7 +318,7 @@
             downloadAnchor.remove();
         }
 
-        function importData(event) {
+        window.importData = function(event) {
             const fileReader = new FileReader();
             if (event.target.files[0]) {
                 fileReader.readAsText(event.target.files[0], "UTF-8");
@@ -313,7 +330,7 @@
                             CATEGORIES = parsed.categories;
                             save();
                             render();
-                            alert(`¡Éxito! Se importaron ${list.length} productos.`);
+                            alert(`¡Éxito! Se importaron ${list.length} productos y se sincronizaron en la nube.`);
                         } else {
                             alert('El archivo no tiene el formato correcto.');
                         }
@@ -324,7 +341,7 @@
             }
         }
 
-        function handleQuickText() {
+        window.handleQuickText = function() {
             const input = document.getElementById('quick-text-input');
             processSpokenOrTyped(input.value.trim());
             input.value = '';
@@ -377,7 +394,7 @@
             }
         }
 
-        function checkDuplicates() {
+        window.checkDuplicates = function() {
             const seenNames = new Set();
             duplicateIdsToRemove = [];
             const duplicateNamesDisplay = [];
@@ -405,12 +422,12 @@
             }
         }
 
-        function closeDuplicateModal() {
+        window.closeDuplicateModal = function() {
             document.getElementById('duplicate-modal').classList.add('view-hidden');
             duplicateIdsToRemove = [];
         }
 
-        function confirmDeleteDuplicates() {
+        window.confirmDeleteDuplicates = function() {
             if (duplicateIdsToRemove.length === 0) return;
             list = list.filter(item => !duplicateIdsToRemove.includes(item.id));
             save();
@@ -419,7 +436,7 @@
             alert('¡Duplicados eliminados!');
         }
 
-        function uncheckAllItems() {
+        window.uncheckAllItems = function() {
             const boughtCount = list.filter(i => i.bought).length;
             if (boughtCount === 0) {
                 alert('No hay productos tachados.');
@@ -434,7 +451,7 @@
             }
         }
 
-        function shareWhatsApp() {
+        window.shareWhatsApp = function() {
             const pendingItems = list.filter(i => !i.bought);
             if (pendingItems.length === 0) {
                 alert('No hay pendientes para compartir.');
@@ -454,7 +471,7 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        function createCategory() {
+        window.createCategory = function() {
             const input = document.getElementById('new-cat-input');
             const name = input.value.trim();
             if (!name) return;
@@ -560,7 +577,6 @@
                     optionsHtml += `<option value="${k}" ${item.cat === k ? 'selected' : ''}>${c.title}</option>`;
                 }
 
-                // ESTRUCTURA CORREGIDA: Izquierda COMPRADO -> Centro (Nombre, Cantidad y Selector de Rubro) -> Derecha (Eliminar + Mover)
                 row.innerHTML = `
                     <div class="checkbox-group-bought" title="Marcar como ya comprado en el súper">
                         <label>Comprado</label>
@@ -587,7 +603,7 @@
             });
         }
 
-        function toggleSelect(id) {
+        window.toggleSelect = function(id) {
             if (selectedIds.has(id)) selectedIds.delete(id);
             else selectedIds.add(id);
             updateBulkBar();
@@ -610,7 +626,7 @@
             }
         }
 
-        function applyBulkMove() {
+        window.applyBulkMove = function() {
             const targetCat = document.getElementById('bulk-target-cat').value;
             list.forEach(item => { if (selectedIds.has(item.id)) item.cat = targetCat; });
             selectedIds.clear();
@@ -618,27 +634,27 @@
             render();
         }
 
-        function goHome() { view = 'home'; activeCat = null; selectedIds.clear(); document.getElementById('global-search').value = ''; render(); }
-        function openCat(key) { view = 'category'; activeCat = key; selectedIds.clear(); render(); }
-        function showAllItems() { view = 'all'; activeCat = null; selectedIds.clear(); render(); }
+        window.goHome = function() { view = 'home'; activeCat = null; selectedIds.clear(); document.getElementById('global-search').value = ''; render(); }
+        window.openCat = function(key) { view = 'category'; activeCat = key; selectedIds.clear(); render(); }
+        window.showAllItems = function() { view = 'all'; activeCat = null; selectedIds.clear(); render(); }
         
-        function triggerSearch() {
+        window.triggerSearch = function() {
             const val = document.getElementById('global-search').value.trim();
             if (val.length > 0) { searchQuery = val; view = 'search'; render(); }
             else { goHome(); }
         }
 
-        function updateName(id, val) {
+        window.updateName = function(id, val) {
             const item = list.find(i => i.id === id);
             if (item && val.trim()) { item.name = val.trim(); save(); render(); }
         }
 
-        function changeItemCategory(id, newCat) {
+        window.changeItemCategory = function(id, newCat) {
             const item = list.find(i => i.id === id);
             if (item) { item.cat = newCat; save(); render(); }
         }
 
-        function promptManualItem() {
+        window.promptManualItem = function() {
             const nameInput = document.getElementById('manual-name');
             const qtyInput = document.getElementById('manual-qty');
             const name = nameInput.value.trim();
@@ -659,9 +675,9 @@
             document.getElementById('confirm-modal').classList.remove('view-hidden');
         }
 
-        function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('view-hidden'); }
+        window.closeConfirmModal = function() { document.getElementById('confirm-modal').classList.add('view-hidden'); }
 
-        function saveConfirmedItem() {
+        window.saveConfirmedItem = function() {
             const finalName = document.getElementById('confirm-name-input').value.trim();
             const finalCat = document.getElementById('confirm-cat-select').value;
             if (!finalName) return;
@@ -678,7 +694,7 @@
             render();
         }
 
-        function toggleItem(id) {
+        window.toggleItem = function(id) {
             const item = list.find(i => i.id === id);
             if (item) {
                 item.bought = !item.bought;
@@ -688,12 +704,12 @@
             }
         }
 
-        function updateQty(id, val) {
+        window.updateQty = function(id, val) {
             const item = list.find(i => i.id === id);
             if (item) { item.qty = val.trim() || '1 un.'; save(); }
         }
 
-        function deleteItem(id) {
+        window.deleteItem = function(id) {
             list = list.filter(i => i.id !== id);
             selectedIds.delete(id);
             save();
@@ -702,7 +718,7 @@
 
         // MICRÓFONO
         let recognition = null, listening = false;
-        function toggleVoice() {
+        window.toggleVoice = function() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!Speech) { alert('Tu navegador no soporta voz.'); return; }
             if (listening) { if (recognition) recognition.stop(); return; }
@@ -739,7 +755,7 @@
             recognition.start();
         }
 
-        window.onload = init;
+        init();
     </script>
 </body>
 </html>
